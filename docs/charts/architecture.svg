@@ -1,61 +1,170 @@
-<svg width="900" height="520" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+<svg width="960" height="540" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M2 1L8 5L2 9" fill="none" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#4B5563"
+            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
   </defs>
-  <rect width="900" height="520" fill="#0F1117" rx="12"/>
-  <text x="450" y="38" text-anchor="middle" font-family="DejaVu Sans" font-size="16" font-weight="bold" fill="#FFFFFF">Retail churn prediction pipeline</text>
-  <rect x="30" y="60" width="840" height="100" rx="10" fill="#1A1D2E" stroke="#2E3250" stroke-width="1"/>
-  <text x="50" y="85" font-family="DejaVu Sans" font-size="11" fill="#6B7280" font-weight="bold">DATA LAYER</text>
-  <rect x="60" y="95" width="180" height="50" rx="8" fill="#0F6E56" stroke="#1D9E75" stroke-width="1"/>
-  <text x="150" y="118" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#9FE1CB">TheLook ecommerce</text>
-  <text x="150" y="134" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">bigquery-public-data</text>
-  <rect x="280" y="95" width="180" height="50" rx="8" fill="#0F6E56" stroke="#1D9E75" stroke-width="1"/>
-  <text x="370" y="118" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#9FE1CB">Synthetic generator</text>
-  <text x="370" y="134" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">generate_synthetic_data.py</text>
-  <rect x="500" y="95" width="180" height="50" rx="8" fill="#085041" stroke="#1D9E75" stroke-width="1"/>
-  <text x="590" y="118" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#9FE1CB">rfm_scores</text>
-  <text x="590" y="134" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">200,000 customers</text>
-  <line x1="240" y1="120" x2="278" y2="120" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="460" y1="120" x2="498" y2="120" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <rect x="30" y="190" width="840" height="110" rx="10" fill="#1A1D2E" stroke="#2E3250" stroke-width="1"/>
-  <text x="50" y="215" font-family="DejaVu Sans" font-size="11" fill="#6B7280" font-weight="bold">FEATURE ENGINEERING</text>
-  <rect x="60" y="225" width="220" height="60" rx="8" fill="#26215C" stroke="#534AB7" stroke-width="1"/>
-  <text x="170" y="251" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#CECBF6">RFM scoring</text>
-  <text x="170" y="267" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">recency, frequency, monetary</text>
-  <rect x="320" y="225" width="220" height="60" rx="8" fill="#26215C" stroke="#534AB7" stroke-width="1"/>
-  <text x="430" y="251" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#CECBF6">Log scaling</text>
-  <text x="430" y="267" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">skew compression</text>
-  <rect x="580" y="225" width="220" height="60" rx="8" fill="#26215C" stroke="#534AB7" stroke-width="1"/>
-  <text x="690" y="251" text-anchor="middle" font-family="DejaVu Sans" font-size="12" font-weight="bold" fill="#CECBF6">Interactions</text>
-  <text x="690" y="267" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">recency x frequency</text>
-  <line x1="280" y1="255" x2="318" y2="255" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="540" y1="255" x2="578" y2="255" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <rect x="30" y="330" width="260" height="120" rx="10" fill="#1A1D2E" stroke="#1D9E75" stroke-width="1.5"/>
-  <text x="160" y="355" text-anchor="middle" font-family="DejaVu Sans" font-size="11" fill="#1D9E75" font-weight="bold">BQML LOGISTIC REG</text>
-  <text x="160" y="374" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">CREATE MODEL in SQL</text>
-  <text x="160" y="392" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">ROC-AUC: 0.826</text>
-  <text x="160" y="410" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">Training: 86 seconds</text>
-  <text x="160" y="428" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#5DCAA5">No Python required</text>
-  <rect x="320" y="330" width="260" height="120" rx="10" fill="#1A1D2E" stroke="#534AB7" stroke-width="1.5"/>
-  <text x="450" y="355" text-anchor="middle" font-family="DejaVu Sans" font-size="11" fill="#7F77DD" font-weight="bold">PYTORCH MLP</text>
-  <text x="450" y="374" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">3-layer feedforward network</text>
-  <text x="450" y="392" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">ROC-AUC: 0.834</text>
-  <text x="450" y="410" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">Training: 42 seconds</text>
-  <text x="450" y="428" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#AFA9EC">SHAP explainability</text>
-  <rect x="610" y="330" width="260" height="120" rx="10" fill="#1A1D2E" stroke="#D85A30" stroke-width="1.5"/>
-  <text x="740" y="355" text-anchor="middle" font-family="DejaVu Sans" font-size="11" fill="#D85A30" font-weight="bold">TABNET</text>
-  <text x="740" y="374" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#F0997B">Attention-based tabular model</text>
-  <text x="740" y="392" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#F0997B">ROC-AUC: 0.834</text>
-  <text x="740" y="410" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#F0997B">Training: 1281 seconds</text>
-  <text x="740" y="428" text-anchor="middle" font-family="DejaVu Sans" font-size="10" fill="#F0997B">Built-in feature masks</text>
-  <line x1="590" y1="300" x2="160" y2="330" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="690" y1="300" x2="450" y2="330" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="790" y1="300" x2="740" y2="330" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <rect x="30" y="470" width="840" height="36" rx="8" fill="#0F2318" stroke="#1D9E75" stroke-width="1"/>
-  <text x="450" y="493" text-anchor="middle" font-family="DejaVu Sans" font-size="11" fill="#1D9E75" font-weight="bold">OUTPUT: bqml_churn_scores -- churn_probability, churn_risk, rfm_segment per customer</text>
-  <line x1="160" y1="450" x2="160" y2="468" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="450" y1="450" x2="450" y2="468" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
-  <line x1="740" y1="450" x2="740" y2="468" stroke="#6B7280" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <rect width="960" height="540" fill="#0F1117" rx="14"/>
+
+  <text x="480" y="36" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="17"
+        font-weight="bold" fill="#FFFFFF">
+    Retail churn prediction pipeline
+  </text>
+
+  <rect x="28" y="58" width="904" height="104" rx="10"
+        fill="#1A1D2E" stroke="#2E3250" stroke-width="1"/>
+  <text x="48" y="80" font-family="Arial, Helvetica, sans-serif"
+        font-size="11" fill="#6B7280" font-weight="bold"
+        letter-spacing="1">DATA LAYER</text>
+
+  <rect x="58" y="90" width="190" height="56" rx="8"
+        fill="#0F6E56" stroke="#1D9E75" stroke-width="1"/>
+  <text x="153" y="115" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#9FE1CB">TheLook ecommerce</text>
+  <text x="153" y="133" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#5DCAA5">bigquery-public-data</text>
+
+  <rect x="288" y="90" width="190" height="56" rx="8"
+        fill="#0F6E56" stroke="#1D9E75" stroke-width="1"/>
+  <text x="383" y="115" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#9FE1CB">Synthetic generator</text>
+  <text x="383" y="133" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#5DCAA5">generate_synthetic_data.py</text>
+
+  <rect x="518" y="90" width="190" height="56" rx="8"
+        fill="#085041" stroke="#1D9E75" stroke-width="1"/>
+  <text x="613" y="115" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#9FE1CB">rfm_scores</text>
+  <text x="613" y="133" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#5DCAA5">200,000 customers</text>
+
+  <line x1="248" y1="118" x2="286" y2="118" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="478" y1="118" x2="516" y2="118" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="28" y="194" width="904" height="114" rx="10"
+        fill="#1A1D2E" stroke="#2E3250" stroke-width="1"/>
+  <text x="48" y="216" font-family="Arial, Helvetica, sans-serif"
+        font-size="11" fill="#6B7280" font-weight="bold"
+        letter-spacing="1">FEATURE ENGINEERING</text>
+
+  <rect x="58" y="226" width="234" height="64" rx="8"
+        fill="#26215C" stroke="#534AB7" stroke-width="1"/>
+  <text x="175" y="252" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#CECBF6">RFM scoring</text>
+  <text x="175" y="270" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#AFA9EC">Recency, frequency, monetary</text>
+
+  <rect x="330" y="226" width="234" height="64" rx="8"
+        fill="#26215C" stroke="#534AB7" stroke-width="1"/>
+  <text x="447" y="252" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#CECBF6">Log scaling</text>
+  <text x="447" y="270" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#AFA9EC">Skew compression on raw features</text>
+
+  <rect x="602" y="226" width="234" height="64" rx="8"
+        fill="#26215C" stroke="#534AB7" stroke-width="1"/>
+  <text x="719" y="252" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        font-weight="bold" fill="#CECBF6">Interaction features</text>
+  <text x="719" y="270" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="10"
+        fill="#AFA9EC">Recency x frequency signal</text>
+
+  <line x1="292" y1="258" x2="328" y2="258" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="564" y1="258" x2="600" y2="258" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="28" y="342" width="278" height="128" rx="10"
+        fill="#1A1D2E" stroke="#1D9E75" stroke-width="1.5"/>
+  <text x="167" y="368" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        fill="#1D9E75" font-weight="bold">BQML logistic regression</text>
+  <text x="167" y="390" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#5DCAA5">CREATE MODEL in SQL</text>
+  <text x="167" y="410" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#5DCAA5">ROC-AUC: 0.826</text>
+  <text x="167" y="430" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#5DCAA5">Training time: 86 seconds</text>
+  <text x="167" y="450" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#5DCAA5">No Python required</text>
+
+  <rect x="342" y="342" width="278" height="128" rx="10"
+        fill="#1A1D2E" stroke="#534AB7" stroke-width="1.5"/>
+  <text x="481" y="368" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        fill="#7F77DD" font-weight="bold">PyTorch MLP</text>
+  <text x="481" y="390" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#AFA9EC">3-layer feedforward network</text>
+  <text x="481" y="410" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#AFA9EC">ROC-AUC: 0.834</text>
+  <text x="481" y="430" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#AFA9EC">Training time: 42 seconds</text>
+  <text x="481" y="450" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#AFA9EC">SHAP explainability</text>
+
+  <rect x="656" y="342" width="278" height="128" rx="10"
+        fill="#1A1D2E" stroke="#D85A30" stroke-width="1.5"/>
+  <text x="795" y="368" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        fill="#D85A30" font-weight="bold">TabNet</text>
+  <text x="795" y="390" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#F0997B">Attention-based tabular model</text>
+  <text x="795" y="410" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#F0997B">ROC-AUC: 0.834</text>
+  <text x="795" y="430" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#F0997B">Training time: 1,281 seconds</text>
+  <text x="795" y="450" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="11"
+        fill="#F0997B">Built-in feature masks</text>
+
+  <line x1="613" y1="308" x2="167" y2="340" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="719" y1="308" x2="481" y2="340" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="825" y1="308" x2="795" y2="340" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="28" y="490" width="904" height="38" rx="8"
+        fill="#0F2318" stroke="#1D9E75" stroke-width="1"/>
+  <text x="480" y="514" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="12"
+        fill="#1D9E75" font-weight="bold">
+    Output: bqml_churn_scores -- churn probability, risk tier, and RFM segment per customer
+  </text>
+
+  <line x1="167" y1="470" x2="167" y2="488" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="481" y1="470" x2="481" y2="488" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="795" y1="470" x2="795" y2="488" stroke="#4B5563"
+        stroke-width="1.5" marker-end="url(#arrow)"/>
+
 </svg>
