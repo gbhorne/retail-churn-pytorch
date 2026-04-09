@@ -1,46 +1,36 @@
 # train_tabnet.py
-# End-to-end TabNet training script.
-# Run: python train_tabnet.py
-
-import numpy as np
+import numpy as np, pickle, json
 import matplotlib.pyplot as plt
-from src.features import load_and_engineer, get_feature_cols, split_and_scale
+from src.features import set_seeds, load_and_engineer, split_data, prepare_tabnet
 from src.tabnet import build_and_train_tabnet, evaluate_tabnet
 
-DATA_PATH = "data/features.csv"
+set_seeds()
+DATA_PATH = 'data/features.csv'
 
-# load and prepare data — TabNet takes raw numpy arrays, no DataLoader needed
-df           = load_and_engineer(DATA_PATH)
-feature_cols = get_feature_cols(df)
-X_train, X_val, X_test, y_train, y_val, y_test, scaler = split_and_scale(df, feature_cols)
+df = load_and_engineer(DATA_PATH)
+train, val, test = split_data(df)
+X_train, X_val, X_test, y_train, y_val, y_test, scaler, cat_mappings, feature_cols, cat_idxs, cat_dims = prepare_tabnet(train, val, test)
 
-# TabNet needs integer labels
-y_train = y_train.astype(int)
-y_val   = y_val.astype(int)
-y_test  = y_test.astype(int)
+print(f'Training TabNet on {len(y_train):,} samples')
+model = build_and_train_tabnet(X_train, y_train, X_val, y_val, cat_idxs=cat_idxs, cat_dims=cat_dims)
 
-print(f"Training TabNet on {len(y_train):,} samples with {len(feature_cols)} features\n")
-
-model = build_and_train_tabnet(X_train, y_train, X_val, y_val)
-
-print("\nTest set evaluation:")
+print('Test set evaluation:')
 metrics = evaluate_tabnet(model, X_test, y_test)
 
-# save feature importance plot
 importance = model.feature_importances_
-indices    = np.argsort(importance)[::-1]
-
+indices = np.argsort(importance)[::-1]
 plt.figure(figsize=(10, 6))
-plt.bar(range(len(feature_cols)), importance[indices])
-plt.xticks(range(len(feature_cols)),
-           [feature_cols[i] for i in indices],
-           rotation=45, ha="right")
-plt.title("TabNet feature importances")
+plt.bar(range(len(feature_cols)), importance[indices], color='#D85A30')
+plt.xticks(range(len(feature_cols)), [feature_cols[i] for i in indices], rotation=45, ha='right')
+plt.title('TabNet feature importances')
 plt.tight_layout()
-plt.savefig("tabnet_feature_importance.png", dpi=150)
+plt.savefig('docs/charts/tabnet_feature_importance.png', dpi=150)
 plt.close()
-print("Feature importance plot saved to tabnet_feature_importance.png")
+print('Saved: docs/charts/tabnet_feature_importance.png')
 
-# save model
-model.save_model("tabnet_churn")
-print("Model saved to tabnet_churn.zip")
+model.save_model('tabnet_churn')
+with open('tabnet_scaler.pkl', 'wb') as f: pickle.dump(scaler, f)
+with open('tabnet_metadata.json', 'w') as f:
+    json.dump({'feature_cols': feature_cols, 'cat_idxs': cat_idxs, 'cat_dims': cat_dims,
+               'cat_mappings': {k: {str(kk): vv for kk, vv in v.items()} for k, v in cat_mappings.items()}}, f)
+print('Saved: tabnet_churn.zip, tabnet_scaler.pkl, tabnet_metadata.json')
