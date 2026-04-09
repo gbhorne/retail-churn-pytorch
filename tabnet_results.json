@@ -1,0 +1,22 @@
+{
+  "model": "TabNet",
+  "roc_auc": 0.8344,
+  "pr_auc": 0.8153,
+  "train_seconds": 825.7,
+  "device": "cpu",
+  "n_features": 18,
+  "cat_idxs": [
+    15,
+    16,
+    17
+  ],
+  "cat_dims": [
+    6,
+    11,
+    7
+  ],
+  "n_train": 144500,
+  "n_val": 25500,
+  "n_test": 30000,
+  "churn_rate_train": 0.5288
+}

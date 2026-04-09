@@ -1,0 +1,12 @@
+{
+  "model": "PyTorch MLP",
+  "roc_auc": 0.8335,
+  "pr_auc": 0.8101,
+  "train_seconds": 115.7,
+  "device": "cpu",
+  "n_features": 36,
+  "n_train": 144500,
+  "n_val": 25500,
+  "n_test": 30000,
+  "churn_rate_train": 0.5288
+}
