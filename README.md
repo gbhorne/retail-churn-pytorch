@@ -1,10 +1,64 @@
 # retail-churn-pytorch
 
-Retail customer churn prediction using PyTorch MLP and TabNet trained on 200,000
-synthetic retail customers across six behavioral segments with RFM features.
-Part of a two-repo comparison against a BigQuery ML logistic regression baseline.
+PyTorch MLP and TabNet churn classifiers trained on a synthetic retail dataset
+of 200,000 customers across six behavioral segments using RFM features.
 
-Companion repo: https://github.com/gbhorne/retail-churn-bqml
+This repo covers model training, evaluation, and explainability.
+The BQML baseline and SQL-native scoring pipeline live in the companion repo:
+https://github.com/gbhorne/retail-churn-bqml
+
+---
+
+## Churn label definition
+
+| Property | Value |
+|----------|-------|
+| Observation window | Full synthetic purchase history per customer |
+| Prediction horizon | N/A (synthetic labels assigned at generation time) |
+| Churn rule | Probabilistic per segment (see table below) |
+| Scoring timestamp | End of observation window |
+
+Churn labels are assigned probabilistically per segment during data generation,
+not derived deterministically from any single feature. This avoids the leakage
+pattern where recency_days directly determines the churn label.
+
+| Segment | Churn probability |
+|---------|------------------|
+| Champions | 5% |
+| Loyal | 10% |
+| Potential | 40% |
+| Recent | 25% |
+| At-Risk | 65% |
+| Hibernating | 85% |
+
+In a production deployment, churn would be defined as no purchase within
+a fixed horizon (e.g. 90 days) following a feature cutoff date, with
+features computed strictly before that cutoff.
+
+---
+
+## Experiment design
+
+All three models (BQML, MLP, TabNet) are trained on the same underlying
+dataset with the same feature definitions to ensure a fair comparison.
+
+| Property | Value |
+|----------|-------|
+| Dataset | 200,000 synthetic retail customers |
+| Features | 9 numeric + log-scaled variants + interaction terms + categoricals |
+| MLP categorical handling | One-hot encoding (no ordinal assumption) |
+| TabNet categorical handling | Integer IDs via cat_idxs and cat_dims |
+| Train split | 72.25% (stratified) |
+| Validation split | 12.75% (stratified) |
+| Test split | 15% (stratified) |
+| Split method | Random stratified (no temporal ordering in synthetic data) |
+| Random seed | 42 (fixed for numpy, torch, and Python random) |
+| Class balance | 53% churned, 47% not churned |
+| Class imbalance handling | WeightedRandomSampler for MLP, native for TabNet |
+
+Note: a random split is appropriate here because the synthetic dataset has
+no temporal ordering. In a production system with real transaction data,
+a time-based split must be used to prevent future data leaking into training.
 
 ---
 
@@ -14,17 +68,72 @@ Companion repo: https://github.com/gbhorne/retail-churn-bqml
 
 ---
 
-## Results
+## Results (reference run, CPU, Windows)
+
+Results are saved to mlp_results.json and tabnet_results.json after each
+training run. The numbers below are from a single reference run.
+Results will vary across hardware, random seeds, and library versions.
 
 | Model | ROC-AUC | PR-AUC | F1 (churned) | Training time |
-|---|---|---|---|---|
-| BQML Logistic Regression | 0.826 | N/A | 0.725 | 86s |
+|-------|---------|--------|--------------|---------------|
+| BQML logistic regression | 0.826 | N/A | 0.725 | 86s |
 | PyTorch MLP | 0.834 | 0.809 | 0.790 | 42s |
-| TabNet | 0.834 | 0.816 | 0.790 | 1281s |
+| TabNet | 0.834 | 0.816 | 0.790 | 1,281s |
 
-All three models land within 0.008 AUC of each other. Neural network complexity
-does not meaningfully improve accuracy on clean tabular RFM data. The real
-differences are explainability, portability, and infrastructure cost.
+In this experiment, neither the MLP nor TabNet materially outperformed the
+simpler BQML baseline on this feature set. The differences are in
+explainability, portability, and deployment flexibility.
+
+---
+
+## Cost comparison
+
+| Model | Infrastructure | Estimated training cost | Scoring mechanism |
+|-------|---------------|------------------------|-------------------|
+| BQML logistic regression | None (serverless) | Cents per TB processed | ML.PREDICT in SQL |
+| PyTorch MLP | CPU VM or local machine | VM cost per training hour | REST API endpoint |
+| TabNet | CPU VM (GPU recommended) | Higher VM cost, longer run | REST API endpoint |
+
+BQML has the lowest total cost of ownership for batch scoring workloads.
+PyTorch models are more appropriate when a REST API serving layer is required
+or when the model needs to be embedded in an application.
+
+---
+
+## Decision threshold guide
+
+The default classification threshold of 0.5 is not always the right business
+decision. Use the precision-recall chart to select a threshold based on
+campaign economics.
+
+| Churn probability | Risk tier | Recommended action |
+|-------------------|-----------|--------------------|
+| >= 0.80 | High | Immediate retention intervention, personalized outreach |
+| 0.60 to 0.79 | Medium-high | Proactive nurture campaign, targeted offer |
+| 0.40 to 0.59 | Medium | Engagement campaign, product recommendation |
+| < 0.40 | Low | No action or low-cost passive re-engagement |
+
+Breakeven threshold formula: campaign cost / expected recovered lifetime value.
+Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
+
+---
+
+## Key design decisions
+
+- MLP uses one-hot encoding for categoricals. Label encoding with scaling
+  imposes a false ordinal relationship on nominal features.
+- TabNet receives categorical columns as integer IDs via cat_idxs and cat_dims,
+  not as scaled floats. This is how TabNet is designed to be used.
+- WeightedRandomSampler handles class imbalance during MLP training.
+  pos_weight is not used alongside oversampling to avoid double-weighting.
+- The scaler, feature column order, and label mappings are saved alongside
+  model weights so inference artifacts are fully self-contained.
+- SHAP uses training data as the background distribution, not test data.
+- Global seeds are set for numpy, torch, and random for reproducibility.
+- The segment feature is derived from RFM scores and may carry partial
+  signal overlap with the churn label. It is retained as a real-world
+  proxy for customer lifecycle stage but should be monitored for redundancy
+  in production feature selection.
 
 ---
 
@@ -32,245 +141,64 @@ differences are explainability, portability, and infrastructure cost.
 
 ![Model comparison](docs/charts/model_comparison.png)
 
-![AUC vs training time](docs/charts/auc_vs_training_time.png)
+![AUC vs. training time](docs/charts/auc_vs_training_time.png)
 
 ![Segment distribution](docs/charts/segment_distribution.png)
 
 ![Churn by segment](docs/charts/churn_by_segment.png)
 
-![Precision recall threshold](docs/charts/precision_recall_threshold.png)
+![Precision vs. recall threshold](docs/charts/precision_recall_threshold.png)
+
+![SHAP summary](docs/charts/shap_summary.png)
+
+![SHAP feature importance](docs/charts/shap_bar.png)
 
 ---
 
-## GCP Setup
-
-- Dataset: customer_intelligence
-- Table: rfm_scores (200,000 rows)
-- Scored output: bqml_churn_scores
-
----
-
-## Quick Start
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/gbhorne/retail-churn-pytorch.git
-cd retail-churn-pytorch
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### 2. Authenticate to GCP
-
-```bash
-gcloud auth application-default login
-gcloud auth login
-gcloud config set project your-project-id
-gcloud auth application-default set-quota-project your-project-id
-```
-
-### 3. Export data from BigQuery
-
-```bash
-python data/export_from_bq.py
-```
-
-### 4. Train MLP
-
-```bash
-python train_mlp.py
-```
-
-### 5. Train TabNet
-
-```bash
-python train_tabnet.py
-```
-
-### 6. Generate all docs
-
-```bash
-python build_docs.py
-```
-
----
-
-## Project Structure
-
-| Path | Purpose |
-|---|---|
-| data/export_from_bq.py | Pulls rfm_scores from BigQuery to CSV |
-| src/features.py | Feature engineering shared by both models |
-| src/dataset.py | PyTorch Dataset and WeightedRandomSampler |
-| src/mlp.py | 3-layer MLP architecture |
-| src/tabnet.py | TabNet wrapper and evaluation |
-| src/train.py | MLP training loop with early stopping |
-| src/evaluate.py | Metrics and SHAP summary plot |
-| train_mlp.py | End-to-end MLP training entrypoint |
-| train_tabnet.py | End-to-end TabNet training entrypoint |
-| build_docs.py | Generates all charts, SVG diagram, and README |
-
----
-
-## Exploitation Guide
-
-### Understanding the output
-
-The scored output table bqml_churn_scores contains one row per customer with:
-
-- churn_probability: float between 0 and 1. Model confidence the customer
-  will not purchase again within the scoring window.
-- churn_risk: High (>=0.7), Medium (>=0.4), Low (<0.4). Bucketed for
-  campaign targeting.
-- rfm_segment: Champions, Loyal, Potential, Recent, At-Risk, Hibernating.
-  Derived from RFM scores independently of the churn model.
-
-### Choosing a decision threshold
-
-The default threshold of 0.5 is not always the right business decision.
-
-If your win-back campaign costs $5 and recovers $80 in lifetime value, the
-breakeven threshold is 5/80 = 0.063. Flag any customer above 0.063, not 0.5.
-This dramatically increases recall at the cost of precision.
-
-If your campaign is expensive (direct mail, sales call), raise the threshold
-to 0.7 or higher to maximize precision.
-
-Use the precision-recall chart to pick the threshold that matches your
-campaign economics.
-
-### Segment action playbook
-
-| Segment | Churn risk | Recommended action | Channel |
-|---|---|---|---|
-| Champions | High | Loyalty reward, early access | Email |
-| Champions | Medium | Points bonus, VIP reminder | Email |
-| Loyal | High | 10-15% discount on next order | Email + SMS |
-| Loyal | Medium | Free shipping on next order | Email |
-| At-Risk | High | Win-back offer 15-20% discount | Email + SMS |
-| At-Risk | Medium | Re-engagement, product recommendation | Email |
-| Potential | High | Onboarding nudge, social proof | Email |
-| Recent | High | Second purchase incentive | Email |
-| Hibernating | High | Aggressive win-back or suppress | Email |
-| Hibernating | Low | Suppress from active campaigns | None |
-
-### Priority scoring query
-
-Rank customers by expected recovery value before running any campaign:
-
-```sql
-SELECT
-  user_id,
-  rfm_segment,
-  churn_risk,
-  churn_probability,
-  monetary,
-  ROUND(monetary * churn_probability, 2) AS expected_loss,
-  CASE
-    WHEN rfm_segment = 'Champions'   THEN 1
-    WHEN rfm_segment = 'Loyal'       THEN 2
-    WHEN rfm_segment = 'At-Risk'     THEN 3
-    WHEN rfm_segment = 'Potential'   THEN 4
-    WHEN rfm_segment = 'Recent'      THEN 5
-    WHEN rfm_segment = 'Hibernating' THEN 6
-  END AS segment_priority
-FROM `your-project-id.customer_intelligence.bqml_churn_scores`
-WHERE churn_risk = 'High'
-ORDER BY segment_priority ASC, expected_loss DESC
-LIMIT 1000
-```
-
-### High-risk Champions campaign list
-
-```sql
-SELECT
-  user_id,
-  monetary,
-  frequency,
-  ROUND(churn_probability * 100, 1) AS churn_pct,
-  rfm_segment
-FROM `your-project-id.customer_intelligence.bqml_churn_scores`
-WHERE rfm_segment = 'Champions'
-  AND churn_risk  = 'High'
-ORDER BY churn_probability DESC
-```
-
-### Win-back list
-
-```sql
-SELECT
-  user_id,
-  rfm_segment,
-  recency_days,
-  monetary,
-  ROUND(churn_probability * 100, 1) AS churn_pct
-FROM `your-project-id.customer_intelligence.bqml_churn_scores`
-WHERE rfm_segment IN ('At-Risk', 'Hibernating')
-  AND churn_risk = 'High'
-ORDER BY monetary DESC
-```
-
-### Suppression list
-
-```sql
-SELECT
-  user_id,
-  rfm_segment,
-  monetary,
-  churn_probability
-FROM `your-project-id.customer_intelligence.bqml_churn_scores`
-WHERE rfm_segment = 'Hibernating'
-  AND churn_risk  = 'Low'
-  AND monetary    < 50
-ORDER BY churn_probability ASC
-```
-
-### Model drift monitoring
-
-Retrain when any of these conditions are met:
-
-- Monthly ROC-AUC on new scoring data drops more than 0.02 below baseline
-- Churn rate in the live scored table shifts more than 5 percentage points
-  from the training churn rate of 52.9%
-- Business rules around the churn definition change
-
----
-
-## When to Use Each Model
+## When to use each model
 
 | Consideration | BQML | MLP | TabNet |
-|---|---|---|---|
+|--------------|------|-----|--------|
 | No Python required | Yes | No | No |
 | Trains in under 2 minutes | Yes | Yes | No |
 | Portable model artifact | No | Yes (.pth) | Yes (.zip) |
 | Feature importance | No | Via SHAP | Built-in masks |
+| Handles categoricals natively | No | Via one-hot | Yes (cat_idxs) |
 | Deploy to Vertex AI endpoint | No | Yes | Yes |
-| Best for batch scoring in SQL | Yes | No | No |
-| Best for real-time API scoring | No | Yes | Yes |
-| Recommended for | SQL pipelines | REST APIs | Explainability audits |
+| Lowest infrastructure cost | Yes | No | No |
+| Best for | SQL pipelines | REST APIs | Explainability audits |
 
 ---
 
-## Synthetic Data Disclaimer
+## Project structure
 
-All customer data in this project is synthetically generated using numpy random
-distributions. No real customer records, PII, or proprietary retail data was
-used. The data was designed to produce realistic RFM behavioral patterns for
-the purpose of demonstrating ML pipeline construction.
+| Path | Purpose |
+|------|---------|
+| data/export_from_bq.py | Pulls rfm_scores from BigQuery to CSV |
+| src/features.py | Feature engineering with separate MLP and TabNet paths |
+| src/dataset.py | PyTorch Dataset and WeightedRandomSampler |
+| src/mlp.py | 3-layer MLP architecture |
+| src/tabnet.py | TabNet wrapper with cat_idxs and cat_dims |
+| src/train.py | MLP training loop with early stopping |
+| src/evaluate.py | Metrics and SHAP summary |
+| train_mlp.py | MLP training entrypoint, saves weights + scaler + metrics |
+| train_tabnet.py | TabNet training entrypoint, saves weights + metadata + metrics |
+| run_shap.py | SHAP explainability using training data as background |
+| build_docs.py | Generates charts and README (no auto-push) |
+| mlp_results.json | Saved MLP experiment results (generated at training time) |
+| tabnet_results.json | Saved TabNet experiment results (generated at training time) |
+
+---
+
+## Synthetic data disclaimer
+
+All customer data is synthetically generated. No real customer records,
+PII, or proprietary retail data was used. The synthetic dataset is stored
+in BigQuery and generated by the companion retail-churn-bqml repo.
+The generator script is generate_synthetic_data.py in that repo.
 
 ---
 
 ## License
 
 MIT
-
----
-
-## Author
-
-**Gregory B. Horne**
-Cloud Solutions Architect
-
-[GitHub: gbhorne](https://github.com/gbhorne) | [LinkedIn](https://linkedin.com/in/gbhorne)

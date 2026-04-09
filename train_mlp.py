@@ -1,5 +1,5 @@
 # train_mlp.py
-import torch, pickle, json
+import torch, pickle, json, time
 from src.features import set_seeds, load_and_engineer, split_data, prepare_mlp
 from src.dataset import make_loader
 from src.mlp import ChurnMLP
@@ -21,7 +21,10 @@ test_loader  = make_loader(X_test,  y_test,  batch_size=512, shuffle=False)
 
 model = ChurnMLP(input_dim=len(feature_cols))
 print(f'Input features: {len(feature_cols)}')
+
+t0 = time.time()
 model, history = train_mlp(model, train_loader, val_loader, epochs=50, lr=1e-3, patience=7, device=device)
+train_seconds = round(time.time() - t0, 1)
 
 print('Test set evaluation:')
 metrics = evaluate_mlp(model, test_loader, device=device)
@@ -29,4 +32,19 @@ metrics = evaluate_mlp(model, test_loader, device=device)
 torch.save(model.state_dict(), 'mlp_churn.pth')
 with open('mlp_scaler.pkl', 'wb') as f: pickle.dump(scaler, f)
 with open('mlp_feature_cols.json', 'w') as f: json.dump(feature_cols, f)
-print('Saved: mlp_churn.pth, mlp_scaler.pkl, mlp_feature_cols.json')
+
+results = {
+    'model': 'PyTorch MLP',
+    'roc_auc': metrics['roc_auc'],
+    'pr_auc':  metrics['pr_auc'],
+    'train_seconds': train_seconds,
+    'device': device,
+    'n_features': len(feature_cols),
+    'n_train': len(y_train),
+    'n_val':   len(y_val),
+    'n_test':  len(y_test),
+    'churn_rate_train': round(float(y_train.mean()), 4),
+}
+with open('mlp_results.json', 'w') as f: json.dump(results, f, indent=2)
+print(f'Saved: mlp_churn.pth, mlp_scaler.pkl, mlp_feature_cols.json, mlp_results.json')
+print(f'Training time: {train_seconds}s')
