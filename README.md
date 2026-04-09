@@ -88,21 +88,6 @@ campaign economics.
 | Hibernating | High | Aggressive win-back (20-25% discount) or suppress | Email |
 | Hibernating | Low | Suppress from active campaigns | None |
 
-### High-risk Champions campaign list
-
-```sql
-SELECT
-  user_id,
-  monetary,
-  frequency,
-  ROUND(churn_probability * 100, 1) AS churn_pct,
-  rfm_segment
-FROM `customer-churn-492703.customer_intelligence.bqml_churn_scores`
-WHERE rfm_segment = 'Champions'
-  AND churn_risk  = 'High'
-ORDER BY churn_probability DESC
-```
-
 ### Model drift monitoring
 
 Retrain when any of these conditions are met:
