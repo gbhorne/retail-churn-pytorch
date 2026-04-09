@@ -7,6 +7,9 @@ This repo covers model training, evaluation, and explainability.
 The BQML baseline and SQL-native scoring pipeline live in the companion repo:
 https://github.com/gbhorne/retail-churn-bqml
 
+This repo serves as the flexible deployment track for comparison against the
+SQL-native BQML baseline in the companion repo.
+
 ---
 
 ## Churn label definition
@@ -18,9 +21,10 @@ https://github.com/gbhorne/retail-churn-bqml
 | Churn rule | Probabilistic per segment (see table below) |
 | Scoring timestamp | End of observation window |
 
-Churn labels are assigned probabilistically per segment during data generation,
-not derived deterministically from any single feature. This avoids the leakage
-pattern where recency_days directly determines the churn label.
+In this synthetic dataset, churn represents a probabilistic likelihood of
+inactivity based on behavioral segment rather than a fixed time-based definition.
+Because churn labels are assigned probabilistically and not derived from recency,
+no feature directly determines the target, avoiding feature leakage.
 
 | Segment | Churn probability |
 |---------|------------------|
@@ -32,8 +36,8 @@ pattern where recency_days directly determines the churn label.
 | Hibernating | 85% |
 
 In a production deployment, churn would be defined as no purchase within
-a fixed horizon (e.g. 90 days) following a feature cutoff date, with
-features computed strictly before that cutoff.
+a fixed horizon (e.g. 90 days) after a feature cutoff date. Features must
+be computed strictly before that cutoff to prevent leakage.
 
 ---
 
@@ -41,6 +45,8 @@ features computed strictly before that cutoff.
 
 All three models (BQML, MLP, TabNet) are trained on the same underlying
 dataset with the same feature definitions to ensure a fair comparison.
+Because customer histories are synthetically generated without a temporal
+prediction task, a random stratified split is appropriate for this experiment.
 
 | Property | Value |
 |----------|-------|
@@ -56,9 +62,8 @@ dataset with the same feature definitions to ensure a fair comparison.
 | Class balance | 53% churned, 47% not churned |
 | Class imbalance handling | WeightedRandomSampler for MLP, native for TabNet |
 
-Note: a random split is appropriate here because the synthetic dataset has
-no temporal ordering. In a production system with real transaction data,
-a time-based split must be used to prevent future data leaking into training.
+Note: in a production system with real transaction data, a time-based split
+must be used to prevent future data leaking into training features.
 
 ---
 
@@ -71,14 +76,16 @@ a time-based split must be used to prevent future data leaking into training.
 ## Results (reference run, CPU, Windows)
 
 Results are saved to mlp_results.json and tabnet_results.json after each
-training run. The numbers below are from a single reference run.
+training run. The numbers below are from the reference runs documented here.
 Results will vary across hardware, random seeds, and library versions.
+PR-AUC for BQML is not included in this reference run but can be derived
+from ML.ROC_CURVE in the companion repo.
 
 | Model | ROC-AUC | PR-AUC | F1 (churned) | Training time |
 |-------|---------|--------|--------------|---------------|
-| BQML logistic regression | 0.826 | N/A | 0.725 | 86s |
-| PyTorch MLP | 0.834 | 0.809 | 0.790 | 42s |
-| TabNet | 0.834 | 0.816 | 0.790 | 1,281s |
+| BQML logistic regression | 0.826 | See companion repo | 0.725 | 86s |
+| PyTorch MLP | 0.8335 | 0.8101 | 0.790 | 115.7s |
+| TabNet | 0.8344 | 0.8153 | 0.790 | 825.7s |
 
 In this experiment, neither the MLP nor TabNet materially outperformed the
 simpler BQML baseline on this feature set. The differences are in
@@ -114,7 +121,7 @@ campaign economics.
 | < 0.40 | Low | No action or low-cost passive re-engagement |
 
 Breakeven threshold formula: campaign cost / expected recovered lifetime value.
-Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
+Example: $5 campaign cost, $80 recovered LTV means act on any customer above 0.063.
 
 ---
 
@@ -125,7 +132,8 @@ Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
 - TabNet receives categorical columns as integer IDs via cat_idxs and cat_dims,
   not as scaled floats. This is how TabNet is designed to be used.
 - WeightedRandomSampler handles class imbalance during MLP training.
-  pos_weight is not used alongside oversampling to avoid double-weighting.
+  pos_weight is not used alongside oversampling to avoid double-weighting
+  and probability calibration distortion.
 - The scaler, feature column order, and label mappings are saved alongside
   model weights so inference artifacts are fully self-contained.
 - SHAP uses training data as the background distribution, not test data.
@@ -134,6 +142,25 @@ Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
   signal overlap with the churn label. It is retained as a real-world
   proxy for customer lifecycle stage but should be monitored for redundancy
   in production feature selection.
+
+---
+
+## Serving the MLP model
+
+The inference pipeline loads model weights, scaler, and feature metadata
+together. All three artifacts must be present for reliable inference.
+
+```
+# Score a single customer
+python predict.py --user_id 1
+
+# Score all customers in a batch
+python predict.py --batch data/features.csv
+```
+
+The predict.py script applies the same preprocessing pipeline used during
+training and outputs churn probability, risk tier, and recommended action
+per customer.
 
 ---
 
@@ -161,7 +188,7 @@ Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
 |--------------|------|-----|--------|
 | No Python required | Yes | No | No |
 | Trains in under 2 minutes | Yes | Yes | No |
-| Portable model artifact | No | Yes (.pth) | Yes (.zip) |
+| Portable model artifact | No (stays in BigQuery) | Yes (.pth) | Yes (.zip) |
 | Feature importance | No | Via SHAP | Built-in masks |
 | Handles categoricals natively | No | Via one-hot | Yes (cat_idxs) |
 | Deploy to Vertex AI endpoint | No | Yes | Yes |
@@ -183,6 +210,7 @@ Example: $5 campaign cost, $80 recovered LTV = act on any customer above 0.063.
 | src/evaluate.py | Metrics and SHAP summary |
 | train_mlp.py | MLP training entrypoint, saves weights + scaler + metrics |
 | train_tabnet.py | TabNet training entrypoint, saves weights + metadata + metrics |
+| predict.py | Inference pipeline: score single customer or batch CSV |
 | run_shap.py | SHAP explainability using training data as background |
 | build_docs.py | Generates charts and README (no auto-push) |
 | mlp_results.json | Saved MLP experiment results (generated at training time) |
